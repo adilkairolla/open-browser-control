@@ -1,0 +1,17 @@
+{
+  "name": "@obc/mcp-server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "obc-mcp": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@obc/shared": "workspace:*"
+  }
+}

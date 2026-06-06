@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Open Browser Control",
+  "version": "0.0.1",
+  "description": "Drive this browser from an AI client over Chrome Native Messaging.",
+  "permissions": ["nativeMessaging", "tabs", "scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Open Browser Control",
+    "default_popup": "src/popup/index.html"
+  }
+}

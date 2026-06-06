@@ -1,0 +1,17 @@
+{
+  "name": "@obc/native-host",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "obc-native-host": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "install-host": "bun run scripts/install.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@obc/shared": "workspace:*"
+  }
+}

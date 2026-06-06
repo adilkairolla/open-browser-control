@@ -1,0 +1,20 @@
+{
+  "name": "open-browser-control",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "MCP server + Chrome extension that lets an AI client drive a real browser via Chrome Native Messaging.",
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "typecheck": "bun run --filter '*' typecheck",
+    "build": "bun run --filter '@obc/extension' build",
+    "dev:extension": "bun run --filter '@obc/extension' dev",
+    "mcp": "bun run --filter '@obc/mcp-server' start",
+    "native-host": "bun run --filter '@obc/native-host' start",
+    "install-host": "bun run --filter '@obc/native-host' install-host"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^6.0.3"
+  }
+}
