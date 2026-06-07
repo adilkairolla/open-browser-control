@@ -50,6 +50,9 @@ class FakeSession implements ChatSessionLike {
   error(): string | undefined {
     return undefined;
   }
+  activeTool(): string | undefined {
+    return undefined;
+  }
   subscribe(l: () => void): () => void {
     this.listeners.add(l);
     return () => this.listeners.delete(l);

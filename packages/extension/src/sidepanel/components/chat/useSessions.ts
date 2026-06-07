@@ -9,6 +9,8 @@ import type { KnownProvider } from "@earendil-works/pi-ai";
 import { authStore } from "@/lib/authStore";
 import { listModels } from "@/lib/providers";
 import { ChatSession, type ChatMessageView } from "@/lib/chat";
+import { createBrowserTools } from "@/lib/tools/browserTools";
+import { permissionController } from "@/lib/permissions";
 import { openSessionsDb } from "@/lib/sessions/db";
 import { SessionManager } from "@/lib/sessions/SessionManager";
 import type { Conversation, ConversationSummary } from "@/lib/sessions/types";
@@ -37,6 +39,7 @@ async function activeTabOrigin(): Promise<string | undefined> {
 
 function createManager(): SessionManager {
   const { conversations, messages } = openSessionsDb();
+  const tools = createBrowserTools();
   return new SessionManager({
     conversations,
     messages,
@@ -44,7 +47,13 @@ function createManager(): SessionManager {
       const models = listModels(providerSlug as KnownProvider);
       const model = models.find((x) => x.id === modelId) ?? models[0];
       if (!model) throw new Error(`No models available for provider "${providerSlug}"`);
-      return new ChatSession({ model, getToken: (p) => authStore.getToken(p), initialMessages });
+      return new ChatSession({
+        model,
+        getToken: (p) => authStore.getToken(p),
+        initialMessages,
+        tools,
+        beforeToolCall: permissionController.beforeToolCall,
+      });
     },
     getOrigin: activeTabOrigin,
   });
@@ -62,6 +71,7 @@ export interface UseSessions {
   open: (id: string) => Promise<Conversation | undefined>;
   remove: (id: string) => void;
   setModel: (provider: string, model: string) => void;
+  activeTool?: string;
 }
 
 export function useSessions(): UseSessions {
@@ -91,5 +101,6 @@ export function useSessions(): UseSessions {
     open: (id) => mgr.open(id),
     remove: (id) => void mgr.deleteConversation(id),
     setModel: (provider, model) => mgr.setModel(provider, model),
+    activeTool: session?.activeTool(),
   };
 }

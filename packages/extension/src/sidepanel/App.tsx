@@ -3,6 +3,9 @@ import { ChatView } from "@/components/chat/ChatView";
 import { ConversationsDrawer } from "@/components/chat/ConversationsDrawer";
 import { ProvidersView, type ProviderEntry } from "@/components/chat/ProvidersView";
 import { useSessions } from "@/components/chat/useSessions";
+import { usePermissions } from "@/components/chat/usePermissions";
+import { ToolApprovalCard } from "@/components/chat/ToolApprovalCard";
+import { PermissionModeToggle } from "@/components/chat/PermissionModeToggle";
 import { authStore } from "@/lib/authStore";
 import { settingsStore } from "@/lib/settingsStore";
 import { CURATED_PROVIDERS, getProviderMeta, listModels } from "@/lib/providers";
@@ -31,6 +34,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
 
   const sessions = useSessions();
+  const perms = usePermissions();
   const started = useRef(false);
 
   async function reload() {
@@ -169,6 +173,15 @@ export function App() {
         messages={sessions.messages}
         streaming={sessions.streaming}
         error={sessions.error ?? undefined}
+        headerActions={<PermissionModeToggle mode={perms.mode} onChange={perms.setMode} />}
+        composerTop={
+          <>
+            {sessions.activeTool && (
+              <p className="mb-1 px-1 text-xs text-muted-foreground">Running {sessions.activeTool}…</p>
+            )}
+            {perms.pending && <ToolApprovalCard pending={perms.pending} onDecide={perms.resolve} />}
+          </>
+        }
         onSelectProvider={async (p) => {
           const first = listModels(p as KnownProvider)[0]?.id ?? "";
           setProvider(p);

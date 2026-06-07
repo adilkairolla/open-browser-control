@@ -7,6 +7,8 @@
  * provider credentials.
  */
 
+import type { ReactNode } from "react";
+
 export type ChatRole = "user" | "assistant";
 
 export interface UiMessage {
@@ -39,6 +41,10 @@ export interface ChatViewProps {
   suggestions?: string[];
   /** Latest error to surface above the composer, if any. */
   error?: string;
+  /** Extra controls rendered in the header (e.g. the permission-mode toggle). */
+  headerActions?: ReactNode;
+  /** Content rendered directly above the composer (approval card, tool status). */
+  composerTop?: ReactNode;
 
   onSelectProvider: (slug: string) => void;
   onSelectModel: (id: string) => void;

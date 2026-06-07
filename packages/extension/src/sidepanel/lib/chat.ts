@@ -1,5 +1,5 @@
 import { Agent } from "@earendil-works/pi-agent-core";
-import type { StreamFn, AgentMessage } from "@earendil-works/pi-agent-core";
+import type { StreamFn, AgentMessage, AgentTool, AgentOptions } from "@earendil-works/pi-agent-core";
 import type { Model, Api, AssistantMessage, UserMessage, Usage } from "@earendil-works/pi-ai";
 
 export type ChatRole = "user" | "assistant";
@@ -17,6 +17,10 @@ export interface ChatSessionOptions {
   initialMessages?: ChatMessageView[];
   /** Test-only override of the LLM call. Production omits it (uses pi's default). */
   streamFn?: StreamFn;
+  /** Browser-control (or other) tools to register with the agent. */
+  tools?: AgentTool<any>[];
+  /** Permission gate fired before each tool runs. */
+  beforeToolCall?: AgentOptions["beforeToolCall"];
 }
 
 const DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant.";
@@ -55,6 +59,7 @@ export interface ChatSessionLike {
   getMessages(): ChatMessageView[];
   isStreaming(): boolean;
   error(): string | undefined;
+  activeTool(): string | undefined;
   subscribe(listener: () => void): () => void;
 }
 
@@ -70,6 +75,7 @@ function messageText(content: AssistantMessage["content"] | UserMessage["content
 export class ChatSession implements ChatSessionLike {
   private readonly agent: Agent;
   private readonly listeners = new Set<() => void>();
+  private activeToolName: string | undefined;
 
   constructor(options: ChatSessionOptions) {
     this.agent = new Agent({
@@ -77,15 +83,19 @@ export class ChatSession implements ChatSessionLike {
         model: options.model,
         systemPrompt: options.systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
         thinkingLevel: "off",
-        tools: [],
+        tools: options.tools ?? [],
         messages: (options.initialMessages ?? []).map((m) => toAgentMessage(m, options.model)),
       },
       getApiKey: (provider) => options.getToken(provider),
       ...(options.streamFn ? { streamFn: options.streamFn } : {}),
+      ...(options.beforeToolCall ? { beforeToolCall: options.beforeToolCall } : {}),
     });
 
-    // Re-emit every agent event as a generic "changed" signal for React.
-    this.agent.subscribe(() => {
+    // Re-emit every agent event as a generic "changed" signal for React, and
+    // track the in-flight tool so the UI can show a "Running …" indicator.
+    this.agent.subscribe((event) => {
+      if (event.type === "tool_execution_start") this.activeToolName = event.toolName;
+      else if (event.type === "tool_execution_end") this.activeToolName = undefined;
       for (const listener of this.listeners) listener();
     });
   }
@@ -113,16 +123,27 @@ export class ChatSession implements ChatSessionLike {
     return this.agent.state.errorMessage;
   }
 
+  activeTool(): string | undefined {
+    return this.activeToolName;
+  }
+
   /** UI view of the conversation, including the in-flight streaming reply. */
   getMessages(): ChatMessageView[] {
     const views: ChatMessageView[] = [];
     for (const msg of this.agent.state.messages) {
-      if (msg.role === "user") views.push({ role: "user", text: messageText(msg.content) });
-      else if (msg.role === "assistant") views.push({ role: "assistant", text: messageText(msg.content) });
+      if (msg.role === "user") {
+        views.push({ role: "user", text: messageText(msg.content) });
+      } else if (msg.role === "assistant") {
+        // Assistant turns that are pure tool calls have no text — skip them so
+        // the UI doesn't render empty bubbles.
+        const text = messageText(msg.content);
+        if (text.length > 0) views.push({ role: "assistant", text });
+      }
     }
     const streaming = this.agent.state.streamingMessage;
     if (streaming && streaming.role === "assistant") {
-      views.push({ role: "assistant", text: messageText(streaming.content) });
+      const text = messageText(streaming.content);
+      if (text.length > 0) views.push({ role: "assistant", text });
     }
     return views;
   }

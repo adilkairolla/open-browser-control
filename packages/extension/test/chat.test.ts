@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { getModels } from "@earendil-works/pi-ai";
+import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { ChatSession } from "../src/sidepanel/lib/chat.ts";
 
 const model = getModels("openrouter")[0]!;
@@ -55,4 +56,42 @@ describe("ChatSession", () => {
     },
     30_000,
   );
+});
+
+describe("ChatSession tool wiring", () => {
+  test("getMessages skips assistant messages that have no text (pure tool calls)", () => {
+    const session = new ChatSession({
+      model,
+      getToken: () => "key",
+      initialMessages: [
+        { role: "user", text: "hi" },
+        { role: "assistant", text: "" },
+        { role: "assistant", text: "real answer" },
+      ],
+    });
+    const texts = session.getMessages().map((m) => m.text);
+    expect(texts).toEqual(["hi", "real answer"]);
+  });
+
+  test("activeTool() is undefined before any tool runs", () => {
+    const session = new ChatSession({ model, getToken: () => "key" });
+    expect(session.activeTool()).toBeUndefined();
+  });
+
+  test("accepts tools and a beforeToolCall option without throwing", () => {
+    const noopTool: AgentTool<any> = {
+      name: "noop",
+      label: "Noop",
+      description: "noop",
+      parameters: { type: "object", properties: {} } as any,
+      execute: async () => ({ content: [], details: null }),
+    };
+    const session = new ChatSession({
+      model,
+      getToken: () => "key",
+      tools: [noopTool],
+      beforeToolCall: async () => undefined,
+    });
+    expect(session).toBeDefined();
+  });
 });

@@ -34,6 +34,8 @@ export function ChatView(props: ChatViewProps) {
     onManageProviders,
     onOpenConversations,
     onAttach,
+    headerActions,
+    composerTop,
   } = props;
 
   const [input, setInput] = useState("");
@@ -81,6 +83,7 @@ export function ChatView(props: ChatViewProps) {
             items={models.map((m) => ({ id: m.id, label: m.name }))}
           />
         </div>
+        {headerActions}
         <IconButton icon="newChat" label="New chat" className="rounded-full" onClick={onNewChat} />
       </header>
 
@@ -132,6 +135,7 @@ export function ChatView(props: ChatViewProps) {
       )}
 
       <div className="px-3 pb-3 pt-1">
+        {composerTop}
         {error && <p className={cn(WRAP, "mb-1.5 px-1 text-xs text-destructive")}>{error}</p>}
         <div className="rounded-3xl border bg-card p-2 shadow-sm transition-colors focus-within:border-ring/60">
           <textarea
