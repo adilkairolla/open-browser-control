@@ -16,7 +16,6 @@
     "@obc/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "geist": "^1.7.2",
     "lucide-react": "^1.17.0",
     "react": "^19",
     "react-dom": "^19",
