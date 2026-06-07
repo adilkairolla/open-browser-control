@@ -10,9 +10,11 @@ It has two halves:
 
 They communicate over **Chrome Native Messaging**.
 
-> **Status:** buildable skeleton. Every component starts/builds, but the transport
-> between the MCP server and the extension is not wired yet. See
-> [`docs/superpowers/specs/2026-06-06-open-browser-control-init-design.md`](docs/superpowers/specs/2026-06-06-open-browser-control-init-design.md).
+> **Status:** in-browser chat works. Click the toolbar icon to group the current
+> tab and open the side-panel chat; connect a provider (API key for all, Anthropic
+> Claude Pro/Max via subscription OAuth), pick a provider+model, and chat. Browser-
+> control tools (MCP / native host) are the next phase and not wired yet. See
+> [`docs/superpowers/plans/2026-06-07-extension-chat-and-providers.md`](docs/superpowers/plans/2026-06-07-extension-chat-and-providers.md).
 
 ## Architecture
 
@@ -61,6 +63,10 @@ bun run dev:extension  # build + launch Chrome with the extension loaded
 
 Load the built extension manually via `chrome://extensions` → *Load unpacked* →
 `packages/extension/dist`.
+
+The chat panel uses the [pi](https://github.com/earendil-works/pi) agent runtime
+(`@earendil-works/pi-ai` + `@earendil-works/pi-agent-core`) directly in the browser.
+Credentials are stored in `chrome.storage.local`.
 
 ### Native messaging host (not yet wired)
 
