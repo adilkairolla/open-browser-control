@@ -1,17 +1,23 @@
-// The toolbar icon: group the current tab (like the Claude extension) and open
-// the chat side panel. We control opening ourselves (so we can also group), so
-// disable the built-in open-on-click behavior.
+// The toolbar icon opens the chat side panel using Chrome's native action-click
+// behavior. Once the panel opens, group the active tab like the Claude extension.
 chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: false })
+  .setPanelBehavior({ openPanelOnActionClick: true })
   .catch((err) => console.warn("[OBC] setPanelBehavior failed", err));
 
-chrome.action.onClicked.addListener(async (tab) => {
-  if (tab.id === undefined || tab.windowId === undefined) return;
+async function groupTab(tabId: number | undefined, windowId: number) {
+  let targetTabId = tabId;
 
-  // Group the active tab. Some tabs (chrome://, the New Tab page) can't be
-  // grouped — ignore failures so the panel still opens.
+  if (targetTabId === undefined) {
+    const [activeTab] = await chrome.tabs.query({ active: true, windowId });
+    targetTabId = activeTab?.id;
+  }
+
+  if (targetTabId === undefined) return;
+
+  // Some tabs (chrome://, the New Tab page) can't be grouped — ignore failures
+  // because opening the panel is the primary action.
   try {
-    const groupId = await chrome.tabs.group({ tabIds: [tab.id] });
+    const groupId = await chrome.tabs.group({ tabIds: [targetTabId] });
     await chrome.tabGroups.update(groupId, {
       title: "Open Browser Control",
       color: "blue",
@@ -19,7 +25,8 @@ chrome.action.onClicked.addListener(async (tab) => {
   } catch (err) {
     console.warn("[OBC] could not group tab", err);
   }
+}
 
-  // Must be called from a user-gesture handler (the icon click qualifies).
-  await chrome.sidePanel.open({ windowId: tab.windowId });
+chrome.sidePanel.onOpened.addListener((info) => {
+  void groupTab(info.tabId, info.windowId);
 });

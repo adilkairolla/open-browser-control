@@ -3,7 +3,7 @@
   "name": "Open Browser Control",
   "version": "0.0.1",
   "description": "Drive this browser from an AI client, with an in-panel chat.",
-  "permissions": ["nativeMessaging", "tabs", "scripting", "activeTab", "sidePanel", "tabGroups"],
+  "permissions": ["nativeMessaging", "tabs", "scripting", "activeTab", "sidePanel", "tabGroups", "storage", "unlimitedStorage"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/background.ts",

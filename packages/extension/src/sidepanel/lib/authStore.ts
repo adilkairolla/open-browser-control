@@ -1,5 +1,5 @@
-import type { Kv } from "./kv.ts";
-import { defaultKv } from "./kv.ts";
+import type { Kv } from "./storage/kv.ts";
+import { defaultKv } from "./storage/kv.ts";
 
 const KEY = "obc:auth";
 

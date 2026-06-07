@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { MemoryKv } from "../src/sidepanel/lib/kv.ts";
+import { MemoryKv } from "../src/sidepanel/lib/storage/kv.ts";
 
 describe("MemoryKv", () => {
   test("get returns undefined for missing key", async () => {

@@ -21,6 +21,21 @@ describe("ChatSession", () => {
     expect(session.currentModel().id).toBe(other.id);
   });
 
+  test("seeds initial messages into the view", () => {
+    const session = new ChatSession({
+      model,
+      getToken: async () => "k",
+      initialMessages: [
+        { role: "user", text: "hi" },
+        { role: "assistant", text: "hello" },
+      ],
+    });
+    expect(session.getMessages()).toEqual([
+      { role: "user", text: "hi" },
+      { role: "assistant", text: "hello" },
+    ]);
+  });
+
   // Live end-to-end test — skipped unless OPENROUTER_API_KEY is set.
   // Run with: OPENROUTER_API_KEY=sk-or-... bun test test/chat.test.ts
   test.skipIf(!process.env.OPENROUTER_API_KEY)(

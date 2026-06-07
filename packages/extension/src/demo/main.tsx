@@ -1,16 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./App.tsx";
-import { TooltipProvider } from "./components/ui/tooltip.tsx";
-import "./index.css";
+import { Demo } from "./Demo";
+import "@/index.css";
 
 const el = document.getElementById("root");
 if (el) {
   createRoot(el).render(
     <StrictMode>
-      <TooltipProvider>
-        <App />
-      </TooltipProvider>
+      <Demo />
     </StrictMode>,
   );
 }

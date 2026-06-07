@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { MemoryKv } from "../src/sidepanel/lib/kv.ts";
+import { MemoryKv } from "../src/sidepanel/lib/storage/kv.ts";
 import { SettingsStore } from "../src/sidepanel/lib/settingsStore.ts";
 
 describe("SettingsStore", () => {
