@@ -3,6 +3,7 @@ import { IDBFactory } from "fake-indexeddb";
 import { openSessionsDb } from "../src/sidepanel/lib/sessions/db.ts";
 import { SessionManager, type CreateSessionArgs } from "../src/sidepanel/lib/sessions/SessionManager.ts";
 import type { ChatMessageView, ChatSessionLike } from "../src/sidepanel/lib/chat.ts";
+import type { TranscriptItem } from "../src/sidepanel/lib/transcript.ts";
 
 /**
  * A controllable fake session. By default send() synchronously appends the user
@@ -43,6 +44,9 @@ class FakeSession implements ChatSessionLike {
   }
   getMessages(): ChatMessageView[] {
     return this.msgs;
+  }
+  getTranscript(): TranscriptItem[] {
+    return this.msgs.map((m, i) => ({ kind: "text", id: `t${i}`, role: m.role, text: m.text }));
   }
   isStreaming(): boolean {
     return this.streaming;
