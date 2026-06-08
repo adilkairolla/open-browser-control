@@ -17,7 +17,17 @@ export interface StoredMessage {
   id: string;
   conversationId: string;
   role: StoredRole;
-  text: string;
+  /** Discriminates a text row from a tool-call row; absent ⇒ "text" (legacy rows). */
+  kind?: "text" | "tool";
+  /** Text rows. */
+  text?: string;
+  /** Tool rows: */
+  toolName?: string;
+  argsJson?: string;
+  status?: "ok" | "error";
+  resultText?: string;
+  resultImageData?: string;
+  resultImageMime?: string;
   /** Monotonic order within a conversation (0, 1, 2 …). */
   seq: number;
   createdAt: number;

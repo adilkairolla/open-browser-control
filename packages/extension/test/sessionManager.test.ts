@@ -14,6 +14,8 @@ import type { TranscriptItem } from "../src/sidepanel/lib/transcript.ts";
 class FakeSession implements ChatSessionLike {
   msgs: ChatMessageView[];
   reply = "ok";
+  toolCalls: { name: string; args: Record<string, unknown>; status: "ok" | "error"; resultText?: string; resultImageData?: string }[] =
+    [];
   streaming = false;
   aborted = false;
   private gate: { promise: Promise<void>; resolve: () => void } | null = null;
@@ -46,7 +48,28 @@ class FakeSession implements ChatSessionLike {
     return this.msgs;
   }
   getTranscript(): TranscriptItem[] {
-    return this.msgs.map((m, i) => ({ kind: "text", id: `t${i}`, role: m.role, text: m.text }));
+    const items: TranscriptItem[] = this.msgs.map((m, i) => ({
+      kind: "text" as const,
+      id: `t${i}`,
+      role: m.role,
+      text: m.text,
+    }));
+    // Insert tool items just before the trailing assistant reply (if any).
+    const tools: TranscriptItem[] = this.toolCalls.map((t, i) => ({
+      kind: "tool" as const,
+      id: `call${i}`,
+      name: t.name,
+      args: t.args,
+      status: t.status,
+      result: {
+        text: t.resultText,
+        image: t.resultImageData ? { data: t.resultImageData, mimeType: "image/png" } : undefined,
+      },
+      error: t.status === "error" ? t.resultText : undefined,
+    }));
+    if (tools.length === 0) return items;
+    const lastAssistant = this.msgs.length > 0 && this.msgs[this.msgs.length - 1]!.role === "assistant";
+    return lastAssistant ? [...items.slice(0, -1), ...tools, items[items.length - 1]!] : [...items, ...tools];
   }
   isStreaming(): boolean {
     return this.streaming;
@@ -141,6 +164,44 @@ describe("SessionManager", () => {
     const conv = (await h.conversations.getAll())[0]!;
     const msgs = await h.messages.getAllByIndex("conversationId", conv.id);
     expect(msgs.map((m) => m.role)).toEqual(["user"]);
+  });
+
+  test("persists tool-call rows from the turn, with finalized status", async () => {
+    await h.mgr.init();
+    h.mgr.startNew("openrouter", "m1");
+    h.getLast()!.toolCalls = [
+      { name: "navigate", args: { url: "https://example.com" }, status: "ok", resultText: "navigated" },
+    ];
+    await h.mgr.send("go to example");
+
+    const conv = (await h.conversations.getAll())[0]!;
+    const msgs = (await h.messages.getAllByIndex("conversationId", conv.id)).sort((a, b) => a.seq - b.seq);
+    expect(msgs.map((m) => m.kind ?? "text")).toEqual(["text", "tool", "text"]);
+    const tool = msgs.find((m) => m.kind === "tool")!;
+    expect(tool.toolName).toBe("navigate");
+    expect(JSON.parse(tool.argsJson!)).toEqual({ url: "https://example.com" });
+    expect(tool.status).toBe("ok");
+    expect(tool.resultText).toBe("navigated");
+  });
+
+  test("reopen reconstructs tool items for display but seeds the agent text-only", async () => {
+    await h.mgr.init();
+    h.mgr.startNew("openrouter", "m1");
+    h.getLast()!.toolCalls = [{ name: "click", args: { ref: "e3" }, status: "ok", resultText: "clicked" }];
+    await h.mgr.send("click it");
+    const conv = (await h.conversations.getAll())[0]!;
+
+    await h.mgr.open(conv.id);
+    const seed = h.created[h.created.length - 1]!;
+    // Agent seed is text-only (user + assistant), no tool rows.
+    expect(seed.initialMessages!.map((m) => m.role)).toEqual(["user", "assistant"]);
+    // Display seed includes the tool item.
+    expect(seed.initialTranscript!.map((i) => i.kind)).toEqual(["text", "tool", "text"]);
+    expect(seed.initialTranscript!.find((i) => i.kind === "tool")).toMatchObject({
+      name: "click",
+      args: { ref: "e3" },
+      status: "ok",
+    });
   });
 
   test("list() is sorted by updatedAt descending", async () => {
