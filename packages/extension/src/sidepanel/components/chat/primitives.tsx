@@ -214,7 +214,7 @@ export function ModelPicker({
       </Combobox.Trigger>
       <Combobox.Portal>
         <Combobox.Positioner side="bottom" align="start" sideOffset={6} className="z-50">
-          <Combobox.Popup className="w-72 max-w-[calc(100vw-1rem)] origin-(--transform-origin) overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl transition-[transform,opacity] duration-150 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+          <Combobox.Popup className="w-72 max-w-[calc(100vw-1rem)] origin-(--transform-origin) overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl transition-[transform,opacity] duration-150 ease-[var(--ease-out)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
             <div className="flex items-center gap-2 border-b px-3 py-2.5">
               <Icon name="search" size={15} className="text-muted-foreground" />
               <Combobox.Input
