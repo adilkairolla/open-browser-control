@@ -34,9 +34,9 @@ export function ToolApprovalCard({ pending, onDecide, className }: ToolApprovalC
   return (
     <motion.div
       className={cn("mb-1.5 rounded-2xl border bg-card p-3 shadow-sm", className)}
-      initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(6px) scale(0.98)" }}
-      animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
-      exit={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px) scale(0.98)" }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={reduce ? { opacity: 0 } : { opacity: 0, y: 4, scale: 0.98 }}
       transition={{ duration: 0.2, ease: EASE_OUT }}
     >
       <div className="flex items-start gap-2.5">

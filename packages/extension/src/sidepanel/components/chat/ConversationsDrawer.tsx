@@ -31,8 +31,11 @@ export function ConversationsDrawer({
   onClose,
 }: ConversationsDrawerProps) {
   const reduce = useReducedMotion();
-  const panelHidden = reduce ? { opacity: 0 } : { opacity: 0, transform: "translateX(-100%)" };
-  const panelShown = { opacity: 1, transform: "translateX(0%)" };
+  // Use motion's native transform props (x) rather than a raw `transform`
+  // string — motion interpolates these reliably (a string can leave the element
+  // stuck at its initial value). This drawer is occasional, so x is fine here.
+  const panelHidden = reduce ? { opacity: 0 } : { opacity: 0, x: "-100%" };
+  const panelShown = { opacity: 1, x: "0%" };
 
   return (
     <AnimatePresence>
