@@ -32,6 +32,11 @@
   --brand-foreground: #ffffff;
   --success: #059669;
   --success-foreground: #ffffff;
+
+  /* Motion — Emil's stronger custom easing curves (built-ins are too weak). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .dark {
@@ -112,4 +117,111 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-sans);
+}
+
+/* Slim, theme-aware scrollbar for scroll containers (e.g. the model list).
+   Replaces the heavy default chrome scrollbar with a subtle pill thumb. */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-muted-foreground) 35%, transparent) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    background-color: color-mix(in srgb, var(--color-muted-foreground) 35%, transparent);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
+  }
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────
+   CSS-driven, off-main-thread animations. Keep transforms/opacity only.
+   Durations stay under 300ms for UI; ease-out for enter, per Emil's framework. */
+
+@keyframes obc-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes obc-tool-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes obc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes obc-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Message enters once, from just below, fading up. */
+@utility animate-msg-in {
+  animation: obc-msg-in 260ms var(--ease-out) both;
+}
+/* A tool pill settling into the transcript. */
+@utility animate-tool-in {
+  animation: obc-tool-in 220ms var(--ease-out) both;
+}
+/* Empty-state / staggered list items. Pair with inline animation-delay. */
+@utility animate-fade-up {
+  animation: obc-fade-up 300ms var(--ease-out) both;
+}
+/* A small confirming pop for status / icon swaps (never from scale(0)). */
+@utility animate-pop {
+  animation: obc-pop 180ms var(--ease-out) both;
+}
+
+/* Press feedback for any pressable element. */
+@utility press {
+  transition: transform 140ms var(--ease-out);
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Accessibility: reduce motion globally. Movement is removed; the near-instant
+   timings keep the UI functional without the gentle transforms. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
