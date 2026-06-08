@@ -8,6 +8,7 @@ import { Combobox } from "@base-ui/react/combobox";
 import { Select, SelectItem, SelectPopup, SelectSeparator, SelectTrigger } from "@/components/ui/select";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { groupModels, type ModelGroup, type ModelOption } from "@/lib/modelGroups";
 import { Icon, type IconName } from "./icons";
 
 // Sentinel value for the optional footer action item (never a real selection).
@@ -47,7 +48,7 @@ export function IconButton({
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-lg outline-none transition-colors",
+          "press inline-flex shrink-0 items-center justify-center rounded-lg outline-none transition-colors",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           "disabled:pointer-events-none disabled:opacity-40",
           variant === "ghost" && "text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -68,7 +69,7 @@ export function SuggestionChip({ text, onClick }: { text: string; onClick?: () =
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border bg-card px-3 py-2 text-left text-sm text-foreground/90 outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+      className="press rounded-2xl border bg-card px-3 py-2 text-left text-sm text-foreground/90 outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
     >
       {text}
     </button>
@@ -161,15 +162,11 @@ export function Picker({
   );
 }
 
-interface ModelOption {
-  value: string;
-  label: string;
-}
-
 /**
  * Searchable model picker (base-ui Combobox). Same pill trigger as Picker, but
- * the popup has a search field — essential for providers like OpenRouter that
- * expose hundreds of models.
+ * the popup adds a search field and groups models by brand — essential for
+ * providers like OpenRouter that expose hundreds of models across many brands.
+ * Grouping/short-label parsing lives in `lib/modelGroups` (pure + tested).
  */
 export function ModelPicker({
   value,
@@ -184,12 +181,16 @@ export function ModelPicker({
   ariaLabel: string;
   className?: string;
 }) {
-  const options: ModelOption[] = items.map((i) => ({ value: i.id, label: i.label }));
-  const selected = options.find((o) => o.value === value) ?? null;
+  const groups = groupModels(items);
+  const selected = groups.flatMap((g) => g.items).find((o) => o.value === value) ?? null;
+  // When at least one brand header is present the headers are sticky, so the
+  // list must have no top padding (otherwise a sliver of the scrolling item
+  // peeks above the pinned header). Flat lists keep a little top breathing room.
+  const hasGroups = groups.some((g) => g.value !== "");
 
   return (
     <Combobox.Root
-      items={options}
+      items={groups}
       value={selected}
       onValueChange={(v) => {
         const opt = v as ModelOption | null;
@@ -212,29 +213,55 @@ export function ModelPicker({
         </Combobox.Icon>
       </Combobox.Trigger>
       <Combobox.Portal>
-        <Combobox.Positioner side="bottom" align="start" sideOffset={4} className="z-50">
-          <Combobox.Popup className="w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-lg">
-            <div className="border-b p-1.5">
+        <Combobox.Positioner side="bottom" align="start" sideOffset={6} className="z-50">
+          <Combobox.Popup className="w-72 max-w-[calc(100vw-1rem)] origin-(--transform-origin) overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl transition-[transform,opacity] duration-150 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0">
+            <div className="flex items-center gap-2 border-b px-3 py-2.5">
+              <Icon name="search" size={15} className="text-muted-foreground" />
               <Combobox.Input
                 placeholder="Search models…"
-                className="w-full rounded-md bg-transparent px-2 py-1 text-sm outline-none placeholder:text-muted-foreground"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
-            <Combobox.Empty className="px-3 py-6 text-center text-xs text-muted-foreground">
-              No models found
+            {/* Base UI keeps Empty mounted for screen-reader announcements and
+                only nulls its children when matches exist; keep the padding on
+                an inner wrapper so the element collapses instead of reserving
+                vertical space above the list. */}
+            <Combobox.Empty className="text-center text-xs text-muted-foreground">
+              <div className="px-3 py-8">No models found</div>
             </Combobox.Empty>
-            <Combobox.List className="max-h-72 overflow-y-auto p-1">
-              {(item: ModelOption) => (
-                <Combobox.Item
-                  key={item.value}
-                  value={item}
-                  className="flex min-h-7 cursor-default items-center justify-between gap-2 rounded-sm px-2 py-1 text-xs outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
-                >
-                  <span className="truncate">{item.label}</span>
-                  <Combobox.ItemIndicator className="shrink-0 text-success">
-                    <Icon name="check" size={14} />
-                  </Combobox.ItemIndicator>
-                </Combobox.Item>
+            <Combobox.List
+              className={cn(
+                "scrollbar-thin max-h-[min(60vh,22rem)] overflow-y-auto overscroll-contain px-1.5 pb-1.5",
+                hasGroups ? "pt-0" : "pt-1.5",
+              )}
+            >
+              {(group: ModelGroup) => (
+                <Combobox.Group key={group.value || "_ungrouped"} items={group.items} className="pb-1 last:pb-0">
+                  {group.value && (
+                    <Combobox.GroupLabel className="sticky top-0 z-10 -mx-1.5 bg-popover px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                      {group.value}
+                    </Combobox.GroupLabel>
+                  )}
+                  <Combobox.Collection>
+                    {(item: ModelOption) => (
+                      <Combobox.Item
+                        key={item.value}
+                        value={item}
+                        className="flex min-h-8 scroll-mt-8 cursor-default items-center gap-2 rounded-md px-2.5 py-1.5 text-sm outline-none transition-colors data-highlighted:bg-accent data-highlighted:text-accent-foreground"
+                      >
+                        <span className="min-w-0 flex-1 truncate">{item.short}</span>
+                        {item.free && (
+                          <span className="shrink-0 rounded-full bg-success/10 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-success">
+                            Free
+                          </span>
+                        )}
+                        <Combobox.ItemIndicator className="shrink-0 text-success">
+                          <Icon name="check" size={15} />
+                        </Combobox.ItemIndicator>
+                      </Combobox.Item>
+                    )}
+                  </Combobox.Collection>
+                </Combobox.Group>
               )}
             </Combobox.List>
           </Combobox.Popup>

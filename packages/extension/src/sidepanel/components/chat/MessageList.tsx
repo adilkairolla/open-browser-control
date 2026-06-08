@@ -116,7 +116,7 @@ export function MessageList({ messages, streaming }: { messages: UiItem[]; strea
         <button
           type="button"
           onClick={jumpToBottom}
-          className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-md transition-colors hover:bg-accent"
+          className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border bg-card px-3 py-1.5 text-xs font-medium shadow-md transition-[transform,background-color] duration-150 ease-[var(--ease-out)] hover:bg-accent active:scale-[0.97] active:-translate-x-1/2"
         >
           <Icon name="chevronDown" size={14} />
           {streaming ? "New messages" : "Jump to latest"}
