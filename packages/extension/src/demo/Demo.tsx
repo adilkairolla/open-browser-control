@@ -6,11 +6,11 @@
 import { type ReactNode, useState } from "react";
 import { cn } from "@/lib/utils";
 
-type Screen = "chat" | "onboarding" | "manage" | "conversations";
-type State = "empty" | "chat";
+type Screen = "chat" | "onboarding" | "manage" | "conversations" | "indicator";
+type State = "empty" | "chat" | "long";
 type Theme = "light" | "dark";
 
-const WIDTH_PRESETS = [300, 360, 400, 480];
+const WIDTH_PRESETS = [300, 360, 400, 480, 560];
 
 export function Demo() {
   const [screen, setScreen] = useState<Screen>("chat");
@@ -37,6 +37,7 @@ export function Demo() {
               ["onboarding", "Onboarding"],
               ["manage", "Manage"],
               ["conversations", "Conversations"],
+              ["indicator", "Indicator"],
             ]}
           />
         </Group>
@@ -49,6 +50,7 @@ export function Demo() {
               options={[
                 ["empty", "Empty"],
                 ["chat", "Conversation"],
+                ["long", "Long (virtualized)"],
               ]}
             />
           </Group>

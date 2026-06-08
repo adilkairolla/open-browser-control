@@ -79,7 +79,7 @@ export const sampleConversation: UiMessage[] = [
     id: "m4",
     role: "assistant",
     text:
-      "Chrome extensions… the usual suspects. Let's try this:\n\n1. Disable unnecessary extensions\n2. Clear the browser cache\n3. Restart your laptop\n\nAlso, how's your disk space? You can check the guide at https://support.example.com/disk-cleanup/a-very-long-path-that-should-wrap-instead-of-overflowing-the-panel",
+      "Chrome extensions… the usual suspects. Let's try this:\n\n1. **Disable** unnecessary extensions\n2. Clear the browser cache\n3. Restart your laptop\n\nAlso check disk space — see the [cleanup guide](https://support.example.com/disk-cleanup/a-very-long-path-that-should-wrap-instead-of-overflowing-the-panel).",
   },
 ];
 
@@ -118,9 +118,21 @@ export const mockConversations: ConversationSummary[] = [
   { id: "c4", title: "Draft a reply", updatedAt: Date.now() - 9 * 24 * HOUR },
 ];
 
-/** Canned assistant replies for the demo's fake streaming. */
+/** Canned assistant replies for the demo's fake streaming — exercise markdown. */
 export const cannedReplies = [
-  "Good question. Here's the short version: it depends on the context, but the key idea is to keep the interface focused and let the content breathe.",
-  "Sure — I'd break that into three steps. First, identify the goal. Second, gather what you need. Third, iterate quickly and check the result.",
-  "Here's a longer one to test wrapping and scrolling. The composer should stay pinned to the bottom while this message streams in, the list should auto-scroll, and nothing should overflow horizontally even at the narrowest panel width. Try dragging the width slider while this is on screen.",
+  "Good question. Here's the **short version**: keep the interface focused and let the content breathe.\n\n- Identify the goal\n- Gather what you need\n- Iterate quickly\n\nThen check the result against the original ask.",
+  "Here's how I'd implement it:\n\n```ts\nexport function debounce<T extends (...a: any[]) => void>(fn: T, ms: number) {\n  let t: ReturnType<typeof setTimeout>;\n  return (...args: Parameters<T>) => {\n    clearTimeout(t);\n    t = setTimeout(() => fn(...args), ms);\n  };\n}\n```\n\nUse a leading edge if you want the first call to fire immediately.",
+  "Quick comparison of the options:\n\n| Option | Bundle | Streaming |\n| --- | --- | --- |\n| Streamdown | Larger | Built-in |\n| react-markdown | Smaller | Manual |\n\nInline code like `npm i streamdown` and a [link](https://streamdown.ai) should both render. This longer paragraph also checks that wrapping and auto-scroll behave while the message streams in.",
 ];
+
+/** A long thread to exercise list virtualization in the playground. */
+export const longConversation: UiMessage[] = Array.from({ length: 40 }, (_, i): UiMessage => {
+  const n = i + 1;
+  return i % 2 === 0
+    ? { id: `long-u-${n}`, role: "user", text: `Question ${n}: can you explain step ${n}?` }
+    : {
+        id: `long-a-${n}`,
+        role: "assistant",
+        text: `Sure — step ${n} in **three parts**:\n\n1. Set up the input\n2. Apply the transform\n3. Verify the output\n\n\`\`\`ts\nconst step${n} = (x: number) => x * ${n};\n\`\`\``,
+      };
+});
