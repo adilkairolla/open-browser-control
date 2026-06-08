@@ -4,12 +4,16 @@
  * iframe's width IS the viewport width, so Tailwind's responsive breakpoints
  * behave exactly like the real Chrome side panel.
  */
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ChatView } from "@/components/chat/ChatView";
 import { ConversationsDrawer } from "@/components/chat/ConversationsDrawer";
+import { PermissionModeToggle } from "@/components/chat/PermissionModeToggle";
 import { ProvidersView } from "@/components/chat/ProvidersView";
+import { ToolApprovalCard } from "@/components/chat/ToolApprovalCard";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import type { PermissionMode } from "@/lib/permissions";
+import { AnimatePresence } from "motion/react";
 import { IndicatorShowcase } from "./IndicatorShowcase";
 import { longConversation, mockConversations, providerEntries, sampleConversation, toolConversation } from "./mock";
 import { useDemoChat } from "./useDemoChat";
@@ -39,7 +43,29 @@ function ChatScreen() {
           ? sampleConversation
           : [];
   const chat = useDemoChat(initial);
-  return <ChatView {...chat} onManageProviders={() => navTo("manage")} />;
+  const [mode, setMode] = useState<PermissionMode>("ask");
+  return (
+    <ChatView
+      {...chat}
+      onManageProviders={() => navTo("manage")}
+      composerTop={
+        <>
+          <AnimatePresence>
+            {state === "tools" && (
+              <ToolApprovalCard
+                key="approval"
+                pending={{ id: "demo", tool: "navigate", origin: "dribbble.com" }}
+                onDecide={() => {}}
+              />
+            )}
+          </AnimatePresence>
+          <div className="mb-1.5 flex px-1">
+            <PermissionModeToggle mode={mode} onChange={setMode} />
+          </div>
+        </>
+      }
+    />
+  );
 }
 
 function Root() {

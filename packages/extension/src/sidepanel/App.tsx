@@ -18,6 +18,7 @@ import {
   type Pkce,
 } from "@/lib/oauthAnthropic";
 import type { KnownProvider } from "@earendil-works/pi-ai";
+import { AnimatePresence } from "motion/react";
 
 // Wire OAuth refresh into the shared auth store once.
 authStore.setRefresher(refreshToken);
@@ -173,11 +174,17 @@ export function App() {
         messages={sessions.messages}
         streaming={sessions.streaming}
         error={sessions.error ?? undefined}
-        headerActions={<PermissionModeToggle mode={perms.mode} onChange={perms.setMode} />}
         composerTop={
-          <>
-            {perms.pending && <ToolApprovalCard pending={perms.pending} onDecide={perms.resolve} />}
-          </>
+          <div className="mb-1.5 flex flex-col gap-1.5">
+            <AnimatePresence>
+              {perms.pending && (
+                <ToolApprovalCard key="approval" pending={perms.pending} onDecide={perms.resolve} />
+              )}
+            </AnimatePresence>
+            <div className="flex px-1">
+              <PermissionModeToggle mode={perms.mode} onChange={perms.setMode} />
+            </div>
+          </div>
         }
         onSelectProvider={async (p) => {
           const first = listModels(p as KnownProvider)[0]?.id ?? "";
