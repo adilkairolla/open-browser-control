@@ -9,10 +9,21 @@
     "service_worker": "src/background.ts",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/control/indicator/content.ts"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
   "action": {
     "default_title": "Open Browser Control"
   },
   "side_panel": {
     "default_path": "src/sidepanel/index.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   }
 }
