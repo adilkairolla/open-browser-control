@@ -21,8 +21,9 @@ export interface ToolCallView {
 
 function StatusIcon({ status }: { status: ToolCallView["status"] }) {
   if (status === "running") return <Spinner className="size-3.5 text-muted-foreground" />;
-  if (status === "error") return <Icon name="close" size={14} className="text-destructive" />;
-  return <Icon name="check" size={14} className="text-success" />;
+  if (status === "error")
+    return <Icon key="error" name="close" size={14} className="animate-pop text-destructive" />;
+  return <Icon key="ok" name="check" size={14} className="animate-pop text-success" />;
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -41,7 +42,7 @@ export function ToolCallCard({ tool }: { tool: ToolCallView }) {
   const summary = summarizeArgs(tool.name, tool.args);
 
   return (
-    <div className="rounded-xl border bg-card/50 text-xs">
+    <div className="animate-tool-in rounded-xl border bg-card/50 text-xs">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -55,41 +56,59 @@ export function ToolCallCard({ tool }: { tool: ToolCallView }) {
           <Icon
             name="chevronDown"
             size={12}
-            className={cn("text-muted-foreground transition-transform", open && "rotate-180")}
+            className={cn(
+              "text-muted-foreground transition-transform duration-200 ease-[var(--ease-out)]",
+              open && "rotate-180",
+            )}
           />
         </span>
       </button>
 
-      {open && (
-        <div className="space-y-2 border-t px-2.5 py-2">
-          <Field label="args">
-            <pre className="overflow-x-auto rounded bg-secondary p-2 font-mono text-[11px] leading-snug">
-              {JSON.stringify(tool.args, null, 2)}
-            </pre>
-          </Field>
-          {tool.error && (
-            <Field label="error">
-              <span className="text-destructive">{tool.error}</span>
-            </Field>
-          )}
-          {tool.result?.text && !tool.error && (
-            <Field label="result">
-              <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded bg-secondary p-2 font-mono text-[11px] leading-snug">
-                {truncate(tool.result.text, 2000)}
+      {/* Expand/collapse via grid-rows 0fr↔1fr — animates to content height with
+          no height:auto hack, on the compositor. Inner wrapper clips while
+          collapsed. The virtualizer re-measures via its ResizeObserver. */}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-[var(--ease-out)]",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden">
+          <div
+            className={cn(
+              "space-y-2 border-t px-2.5 py-2 transition-opacity duration-200 ease-[var(--ease-out)]",
+              open ? "opacity-100" : "opacity-0",
+            )}
+          >
+            <Field label="args">
+              <pre className="overflow-x-auto rounded bg-secondary p-2 font-mono text-[11px] leading-snug">
+                {JSON.stringify(tool.args, null, 2)}
               </pre>
             </Field>
-          )}
-          {tool.result?.image && (
-            <Field label="screenshot">
-              <img
-                src={`data:${tool.result.image.mimeType};base64,${tool.result.image.data}`}
-                alt="screenshot result"
-                className="max-h-48 w-auto rounded border"
-              />
-            </Field>
-          )}
+            {tool.error && (
+              <Field label="error">
+                <span className="text-destructive">{tool.error}</span>
+              </Field>
+            )}
+            {tool.result?.text && !tool.error && (
+              <Field label="result">
+                <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded bg-secondary p-2 font-mono text-[11px] leading-snug">
+                  {truncate(tool.result.text, 2000)}
+                </pre>
+              </Field>
+            )}
+            {tool.result?.image && (
+              <Field label="screenshot">
+                <img
+                  src={`data:${tool.result.image.mimeType};base64,${tool.result.image.data}`}
+                  alt="screenshot result"
+                  className="max-h-48 w-auto rounded border"
+                />
+              </Field>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
