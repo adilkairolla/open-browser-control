@@ -289,11 +289,12 @@ export function MessageActions({ text }: { text: string }) {
   return (
     <div className="mt-1 flex items-center gap-0.5">
       <IconButton
+        key={copied ? "check" : "copy"}
         icon={copied ? "check" : "copy"}
         label={copied ? "Copied" : "Copy"}
         size="sm"
         onClick={copy}
-        className={copied ? "text-success hover:text-success" : undefined}
+        className={cn("animate-pop", copied && "text-success hover:text-success")}
       />
     </div>
   );

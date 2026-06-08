@@ -84,12 +84,23 @@ export function ChatView(props: ChatViewProps) {
 
       {messages.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-4">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+          <div
+            className="animate-fade-up flex size-12 items-center justify-center rounded-2xl bg-brand/10 text-brand"
+            style={{ animationDelay: "0ms" }}
+          >
             <Icon name="brand" size={26} />
           </div>
-          <h1 className="text-center text-xl font-semibold tracking-tight">What can I help with?</h1>
+          <h1
+            className="animate-fade-up text-center text-xl font-semibold tracking-tight"
+            style={{ animationDelay: "60ms" }}
+          >
+            What can I help with?
+          </h1>
           {suggestions && suggestions.length > 0 && (
-            <div className="grid w-full max-w-sm grid-cols-2 gap-2">
+            <div
+              className="animate-fade-up grid w-full max-w-sm grid-cols-2 gap-2"
+              style={{ animationDelay: "120ms" }}
+            >
               {suggestions.slice(0, 4).map((s) => (
                 <SuggestionChip key={s} text={s} onClick={() => onSend(s)} />
               ))}
@@ -121,13 +132,21 @@ export function ChatView(props: ChatViewProps) {
             <IconButton icon="attach" label="Attach" size="sm" className="rounded-full" onClick={onAttach} />
             <div className="flex-1" />
             {streaming ? (
-              <IconButton icon="stop" label="Stop" variant="brand" className="rounded-full" onClick={onStop} />
+              <IconButton
+                key="stop"
+                icon="stop"
+                label="Stop"
+                variant="brand"
+                className="animate-pop rounded-full"
+                onClick={onStop}
+              />
             ) : (
               <IconButton
+                key="send"
                 icon="send"
                 label="Send"
                 variant="brand"
-                className="rounded-full"
+                className="animate-pop rounded-full"
                 disabled={!canSend}
                 onClick={submit}
               />
