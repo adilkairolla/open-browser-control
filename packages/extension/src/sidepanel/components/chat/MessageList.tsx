@@ -22,8 +22,9 @@ const WRAP = "whitespace-pre-wrap break-words [overflow-wrap:anywhere]";
 
 export function MessageList({ messages, streaming }: { messages: UiMessage[]; streaming: boolean }) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [stick, setStick] = useState(true);
-  const [atBottom, setAtBottom] = useState(true);
+  // `pinned` = the user is at the bottom, so the list should follow new content.
+  const [pinned, setPinned] = useState(true);
+  const lastTopRef = useRef(0);
 
   const virtualizer = useVirtualizer({
     count: messages.length,
@@ -35,31 +36,39 @@ export function MessageList({ messages, streaming }: { messages: UiMessage[]; st
 
   // Track whether the user is pinned to the bottom (drives auto-scroll + the
   // jump button). Bound once to the viewport node the ScrollArea forwards.
+  // Re-pin whenever we're near the bottom; only UNpin on a real upward scroll —
+  // content growth (rows measuring taller, streamed tokens) raises scrollHeight
+  // without moving scrollTop, so it must not be mistaken for the user leaving.
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
     const onScroll = () => {
-      const near = isNearBottom(el.scrollTop, el.clientHeight, el.scrollHeight);
-      setStick(near);
-      setAtBottom(near);
+      const top = el.scrollTop;
+      const movedUp = top < lastTopRef.current - 2;
+      lastTopRef.current = top;
+      const near = isNearBottom(top, el.clientHeight, el.scrollHeight);
+      setPinned((prev) => (near ? true : movedUp ? false : prev));
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Re-pin to the bottom while sticking. Fires on a new message and on each
-  // streamed token (the last row's text — and thus measured height — grows).
-  const lastText = messages[messages.length - 1]?.text ?? "";
+  // While pinned, ride the bottom. Keyed on total size so it re-fires whenever
+  // content grows — a new message, a streamed token, OR late row measurements
+  // settling (estimated 80px → real height). Setting scrollTop = scrollHeight is
+  // robust to dynamic heights in a way scrollToIndex (estimate-based) is not.
+  const totalSize = virtualizer.getTotalSize();
   useLayoutEffect(() => {
-    if (!stick || messages.length === 0) return;
-    virtualizer.scrollToIndex(messages.length - 1, { align: "end" });
-  }, [messages.length, lastText, stick, virtualizer]);
+    const el = viewportRef.current;
+    if (!el || !pinned) return;
+    el.scrollTop = el.scrollHeight;
+  }, [totalSize, pinned]);
 
   const jumpToBottom = () => {
-    setStick(true);
-    setAtBottom(true);
-    if (messages.length > 0) virtualizer.scrollToIndex(messages.length - 1, { align: "end" });
+    setPinned(true);
+    const el = viewportRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   };
 
   return (
@@ -100,7 +109,7 @@ export function MessageList({ messages, streaming }: { messages: UiMessage[]; st
         </div>
       </ScrollArea>
 
-      {!atBottom && (
+      {!pinned && (
         <button
           type="button"
           onClick={jumpToBottom}
