@@ -6,13 +6,13 @@
  * a pill composer and circular icon/send buttons. Tuned for narrow side-panel
  * widths (no horizontal overflow). Pure view over ChatViewProps.
  */
-import { useEffect, useRef, useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ChatViewProps } from "./types";
 import { Icon } from "./icons";
-import { IconButton, MessageActions, ModelPicker, Picker, SuggestionChip } from "./primitives";
+import { IconButton, ModelPicker, Picker, SuggestionChip } from "./primitives";
 import { ProviderIcon } from "./ProviderIcon";
+import { MessageList } from "./MessageList";
 
 const WRAP = "whitespace-pre-wrap break-words [overflow-wrap:anywhere]";
 
@@ -39,12 +39,7 @@ export function ChatView(props: ChatViewProps) {
   } = props;
 
   const [input, setInput] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
   const canSend = input.trim().length > 0 && !streaming;
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, streaming]);
 
   function submit() {
     if (!canSend) return;
@@ -102,36 +97,7 @@ export function ChatView(props: ChatViewProps) {
           )}
         </div>
       ) : (
-        <div className="min-h-0 flex-1">
-          <ScrollArea>
-            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-3 py-4">
-              {messages.map((m) =>
-                m.role === "user" ? (
-                  <div key={m.id} className="flex justify-end">
-                    <div className={cn(WRAP, "max-w-[85%] rounded-2xl bg-secondary px-3.5 py-2 text-sm")}>
-                      {m.text}
-                    </div>
-                  </div>
-                ) : (
-                  <div key={m.id} className="group">
-                    <div className={cn(WRAP, "text-sm leading-relaxed")}>
-                      {m.text}
-                      {m.streaming && (
-                        <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-foreground align-text-bottom" />
-                      )}
-                    </div>
-                    {!m.streaming && m.text && (
-                      <div className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                        <MessageActions text={m.text} />
-                      </div>
-                    )}
-                  </div>
-                ),
-              )}
-              <div ref={bottomRef} />
-            </div>
-          </ScrollArea>
-        </div>
+        <MessageList messages={messages} streaming={streaming} />
       )}
 
       <div className="px-3 pb-3 pt-1">
