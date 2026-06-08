@@ -139,3 +139,50 @@ export const longConversation: UiItem[] = Array.from({ length: 40 }, (_, i): UiI
         text: `Sure — step ${n} in **three parts**:\n\n1. Set up the input\n2. Apply the transform\n3. Verify the output\n\n\`\`\`ts\nconst step${n} = (x: number) => x * ${n};\n\`\`\``,
       };
 });
+
+/** A tiny 1x1 transparent PNG so the screenshot thumbnail has something to show. */
+const TINY_PNG =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+
+/** Showcases tool pills (ok / error / screenshot) in the playground. */
+export const toolConversation: UiItem[] = [
+  { id: "tc-u1", kind: "text", role: "user", text: "Open example.com and screenshot it." },
+  {
+    id: "tc-t1",
+    kind: "tool",
+    name: "navigate",
+    args: { url: "https://example.com" },
+    status: "ok",
+    result: { text: "Navigated. Call read_page to see the page." },
+  },
+  {
+    id: "tc-t2",
+    kind: "tool",
+    name: "read_page",
+    args: { interactiveOnly: true },
+    status: "ok",
+    result: { text: '[e1] link "More information"\n[e2] heading "Example Domain"' },
+  },
+  {
+    id: "tc-t3",
+    kind: "tool",
+    name: "screenshot",
+    args: {},
+    status: "ok",
+    result: { image: { data: TINY_PNG, mimeType: "image/png" } },
+  },
+  {
+    id: "tc-t4",
+    kind: "tool",
+    name: "click",
+    args: { ref: "e9" },
+    status: "error",
+    error: "No element with ref e9 (refs go stale after navigation).",
+  },
+  {
+    id: "tc-a1",
+    kind: "text",
+    role: "assistant",
+    text: "Here's **example.com** — captured a screenshot. The stale-ref click failed; I'd re-read the page first.",
+  },
+];

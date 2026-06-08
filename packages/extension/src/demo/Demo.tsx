@@ -7,7 +7,7 @@ import { type ReactNode, useState } from "react";
 import { cn } from "@/lib/utils";
 
 type Screen = "chat" | "onboarding" | "manage" | "conversations" | "indicator";
-type State = "empty" | "chat" | "long";
+type State = "empty" | "chat" | "long" | "tools";
 type Theme = "light" | "dark";
 
 const WIDTH_PRESETS = [300, 360, 400, 480, 560];
@@ -51,6 +51,7 @@ export function Demo() {
                 ["empty", "Empty"],
                 ["chat", "Conversation"],
                 ["long", "Long (virtualized)"],
+                ["tools", "Tool calls"],
               ]}
             />
           </Group>

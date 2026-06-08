@@ -11,7 +11,7 @@ import { ConversationsDrawer } from "@/components/chat/ConversationsDrawer";
 import { ProvidersView } from "@/components/chat/ProvidersView";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { IndicatorShowcase } from "./IndicatorShowcase";
-import { longConversation, mockConversations, providerEntries, sampleConversation } from "./mock";
+import { longConversation, mockConversations, providerEntries, sampleConversation, toolConversation } from "./mock";
 import { useDemoChat } from "./useDemoChat";
 import "@/index.css";
 
@@ -30,7 +30,14 @@ function navTo(next: string) {
 }
 
 function ChatScreen() {
-  const initial = state === "long" ? longConversation : state === "chat" ? sampleConversation : [];
+  const initial =
+    state === "tools"
+      ? toolConversation
+      : state === "long"
+        ? longConversation
+        : state === "chat"
+          ? sampleConversation
+          : [];
   const chat = useDemoChat(initial);
   return <ChatView {...chat} onManageProviders={() => navTo("manage")} />;
 }
