@@ -11,13 +11,26 @@ import type { ReactNode } from "react";
 
 export type ChatRole = "user" | "assistant";
 
-export interface UiMessage {
+export interface UiTextMessage {
+  kind: "text";
   id: string;
   role: ChatRole;
   text: string;
   /** True for the in-flight assistant reply currently being streamed. */
   streaming?: boolean;
 }
+
+export interface UiToolCall {
+  kind: "tool";
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
+  status: "running" | "ok" | "error";
+  result?: { text?: string; image?: { data: string; mimeType: string } };
+  error?: string;
+}
+
+export type UiItem = UiTextMessage | UiToolCall;
 
 export interface UiProvider {
   slug: string;
@@ -34,7 +47,7 @@ export interface ChatViewProps {
   models: UiModel[];
   provider: string;
   model: string;
-  messages: UiMessage[];
+  messages: UiItem[];
   /** Whether an assistant reply is currently streaming. */
   streaming: boolean;
   /** Optional starter prompts shown on the empty state. */

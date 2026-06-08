@@ -4,17 +4,17 @@
  * build from a ChatSession, so the layouts can't tell the difference.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChatViewProps, UiMessage } from "@/components/chat/types";
+import type { ChatViewProps, UiItem } from "@/components/chat/types";
 import { cannedReplies, modelsByProvider, providers, suggestions } from "./mock";
 
 let counter = 0;
 const nextId = () => `demo-${++counter}`;
 
-export function useDemoChat(initial: UiMessage[]): ChatViewProps {
+export function useDemoChat(initial: UiItem[]): ChatViewProps {
   const firstProvider = providers[0]!.slug;
   const [provider, setProvider] = useState(firstProvider);
   const [model, setModel] = useState(modelsByProvider[firstProvider]![0]!.id);
-  const [messages, setMessages] = useState<UiMessage[]>(initial);
+  const [messages, setMessages] = useState<UiItem[]>(initial);
   const [streaming, setStreaming] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const replyIdx = useRef(0);
@@ -29,30 +29,36 @@ export function useDemoChat(initial: UiMessage[]): ChatViewProps {
       timer.current = null;
     }
     setStreaming(false);
-    setMessages((ms) => ms.map((m) => (m.streaming ? { ...m, streaming: false } : m)));
+    setMessages((ms) => ms.map((m) => (m.kind === "text" && m.streaming ? { ...m, streaming: false } : m)));
   }, []);
 
   const send = useCallback((text: string) => {
     if (timer.current) return; // already streaming
-    const userMsg: UiMessage = { id: nextId(), role: "user", text };
+    const userMsg: UiItem = { id: nextId(), kind: "text", role: "user", text };
     const full = cannedReplies[replyIdx.current % cannedReplies.length]!;
     replyIdx.current += 1;
     const assistantId = nextId();
-    setMessages((ms) => [...ms, userMsg, { id: assistantId, role: "assistant", text: "", streaming: true }]);
+    setMessages((ms) => [
+      ...ms,
+      userMsg,
+      { id: assistantId, kind: "text", role: "assistant", text: "", streaming: true },
+    ]);
     setStreaming(true);
 
     let i = 0;
     timer.current = setInterval(() => {
       i += 3;
       const slice = full.slice(0, i);
-      setMessages((ms) => ms.map((m) => (m.id === assistantId ? { ...m, text: slice } : m)));
+      setMessages((ms) => ms.map((m) => (m.kind === "text" && m.id === assistantId ? { ...m, text: slice } : m)));
       if (i >= full.length) {
         if (timer.current) {
           clearInterval(timer.current);
           timer.current = null;
         }
         setStreaming(false);
-        setMessages((ms) => ms.map((m) => (m.id === assistantId ? { ...m, streaming: false } : m)));
+        setMessages((ms) =>
+          ms.map((m) => (m.kind === "text" && m.id === assistantId ? { ...m, streaming: false } : m)),
+        );
       }
     }, 16);
   }, []);

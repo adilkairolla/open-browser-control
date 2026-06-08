@@ -2,7 +2,7 @@
  * Mock data for the UI playground. Deliberately self-contained (no pi import)
  * so `bun dev` renders the chat without any provider credentials.
  */
-import type { UiMessage, UiModel, UiProvider } from "@/components/chat/types";
+import type { UiItem, UiModel, UiProvider } from "@/components/chat/types";
 import type { ProviderEntry } from "@/components/chat/ProvidersView";
 import type { ConversationSummary } from "@/lib/sessions/types";
 
@@ -67,16 +67,18 @@ export const suggestions = [
 ];
 
 /** A sample thread that includes a long unbreakable URL to stress-test wrapping. */
-export const sampleConversation: UiMessage[] = [
-  { id: "m1", role: "user", text: "My laptop's been super slow since yesterday. Help me troubleshoot." },
+export const sampleConversation: UiItem[] = [
+  { id: "m1", kind: "text", role: "user", text: "My laptop's been super slow since yesterday. Help me troubleshoot." },
   {
     id: "m2",
+    kind: "text",
     role: "assistant",
     text: "Let's troubleshoot like tech ninjas 🥷\n\nFirst question: did you install or update anything recently?",
   },
-  { id: "m3", role: "user", text: "I installed a few Chrome extensions and updated Zoom." },
+  { id: "m3", kind: "text", role: "user", text: "I installed a few Chrome extensions and updated Zoom." },
   {
     id: "m4",
+    kind: "text",
     role: "assistant",
     text:
       "Chrome extensions… the usual suspects. Let's try this:\n\n1. **Disable** unnecessary extensions\n2. Clear the browser cache\n3. Restart your laptop\n\nAlso check disk space — see the [cleanup guide](https://support.example.com/disk-cleanup/a-very-long-path-that-should-wrap-instead-of-overflowing-the-panel).",
@@ -126,12 +128,13 @@ export const cannedReplies = [
 ];
 
 /** A long thread to exercise list virtualization in the playground. */
-export const longConversation: UiMessage[] = Array.from({ length: 40 }, (_, i): UiMessage => {
+export const longConversation: UiItem[] = Array.from({ length: 40 }, (_, i): UiItem => {
   const n = i + 1;
   return i % 2 === 0
-    ? { id: `long-u-${n}`, role: "user", text: `Question ${n}: can you explain step ${n}?` }
+    ? { id: `long-u-${n}`, kind: "text" as const, role: "user", text: `Question ${n}: can you explain step ${n}?` }
     : {
         id: `long-a-${n}`,
+        kind: "text" as const,
         role: "assistant",
         text: `Sure — step ${n} in **three parts**:\n\n1. Set up the input\n2. Apply the transform\n3. Verify the output\n\n\`\`\`ts\nconst step${n} = (x: number) => x * ${n};\n\`\`\``,
       };

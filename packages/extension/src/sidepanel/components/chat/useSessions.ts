@@ -8,22 +8,36 @@ import { useEffect, useRef, useState } from "react";
 import type { KnownProvider } from "@earendil-works/pi-ai";
 import { authStore } from "@/lib/authStore";
 import { listModels } from "@/lib/providers";
-import { ChatSession, type ChatMessageView } from "@/lib/chat";
+import { ChatSession, type ChatMessageView, type PageContext } from "@/lib/chat";
+import { BROWSER_AGENT_SYSTEM_PROMPT } from "@/lib/agentPrompt";
 import { createBrowserTools } from "@/lib/tools/browserTools";
 import { permissionController } from "@/lib/permissions";
+import type { IndicatorMessage } from "../../../control/indicator/protocol";
 import { openSessionsDb } from "@/lib/sessions/db";
 import { SessionManager } from "@/lib/sessions/SessionManager";
 import type { Conversation, ConversationSummary } from "@/lib/sessions/types";
-import type { UiMessage } from "./types";
+import type { UiItem } from "./types";
+import type { TranscriptItem } from "@/lib/transcript";
 
-/** Map the session transcript to ChatView's message shape (pure, tested). */
-export function toUiMessages(messages: ChatMessageView[], streaming: boolean): UiMessage[] {
-  return messages.map((m, i) => ({
-    id: String(i),
-    role: m.role,
-    text: m.text,
-    streaming: streaming && m.role === "assistant" && i === messages.length - 1,
-  }));
+/** Map the rich session transcript to ChatView's item shape (pure, tested). */
+export function toUiItems(items: TranscriptItem[], streaming: boolean): UiItem[] {
+  // The in-flight reply is the last item when it is assistant text.
+  const last = items.length - 1;
+  const lastIsStreamingText =
+    streaming && last >= 0 && items[last]!.kind === "text" && (items[last] as any).role === "assistant";
+  return items.map((it, i) =>
+    it.kind === "text"
+      ? { kind: "text", id: it.id, role: it.role, text: it.text, streaming: lastIsStreamingText && i === last }
+      : {
+          kind: "tool",
+          id: it.id,
+          name: it.name,
+          args: it.args,
+          status: it.status,
+          result: it.result,
+          error: it.error,
+        },
+  );
 }
 
 /** Hostname of the active tab, used to tag where a conversation started. */
@@ -34,6 +48,31 @@ async function activeTabOrigin(): Promise<string | undefined> {
     return new URL(tab.url).hostname;
   } catch {
     return undefined;
+  }
+}
+
+/** Title + URL of the active tab, injected into each turn so the agent stays
+ *  oriented. Browser-internal pages it can't act on are reported as no context. */
+async function activeTabPageContext(): Promise<PageContext | undefined> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.url || /^(chrome|edge|about|chrome-extension):/.test(tab.url)) return undefined;
+    return { url: tab.url, title: tab.title ?? "" };
+  } catch {
+    return undefined;
+  }
+}
+
+/** Show/hide the page glow on the active tab as the agent starts/stops acting.
+ *  Best-effort: a tab without the content script (e.g. chrome://) just no-ops. */
+async function setActiveTabIndicator(active: boolean): Promise<void> {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id || !tab.url || /^(chrome|edge|about|chrome-extension):/.test(tab.url)) return;
+    const message: IndicatorMessage = { type: active ? "OBC_SHOW_GLOW" : "OBC_HIDE_GLOW" };
+    await chrome.tabs.sendMessage(tab.id, message).catch(() => undefined);
+  } catch {
+    // The glow is cosmetic — never let it disrupt a turn.
   }
 }
 
@@ -50,9 +89,12 @@ function createManager(): SessionManager {
       return new ChatSession({
         model,
         getToken: (p) => authStore.getToken(p),
+        systemPrompt: BROWSER_AGENT_SYSTEM_PROMPT,
         initialMessages,
         tools,
         beforeToolCall: permissionController.beforeToolCall,
+        getPageContext: activeTabPageContext,
+        onAgentActive: setActiveTabIndicator,
       });
     },
     getOrigin: activeTabOrigin,
@@ -62,7 +104,7 @@ function createManager(): SessionManager {
 export interface UseSessions {
   conversations: ConversationSummary[];
   activeId?: string;
-  messages: UiMessage[];
+  messages: UiItem[];
   streaming: boolean;
   error?: string;
   send: (text: string) => void;
@@ -87,7 +129,7 @@ export function useSessions(): UseSessions {
 
   const session = mgr.activeSession();
   const streaming = session?.isStreaming() ?? false;
-  const messages = session ? toUiMessages(session.getMessages(), streaming) : [];
+  const messages = session ? toUiItems(session.getTranscript(), streaming) : [];
 
   return {
     conversations: mgr.list(),

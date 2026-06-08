@@ -13,14 +13,15 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { isNearBottom } from "@/lib/autoscroll";
-import type { UiMessage } from "./types";
+import type { UiItem } from "./types";
 import { Markdown } from "./Markdown";
+import { ToolCallCard } from "./ToolCallCard";
 import { MessageActions } from "./primitives";
 import { Icon } from "./icons";
 
 const WRAP = "whitespace-pre-wrap break-words [overflow-wrap:anywhere]";
 
-export function MessageList({ messages, streaming }: { messages: UiMessage[]; streaming: boolean }) {
+export function MessageList({ messages, streaming }: { messages: UiItem[]; streaming: boolean }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   // `pinned` = the user is at the bottom, so the list should follow new content.
   const [pinned, setPinned] = useState(true);
@@ -86,7 +87,9 @@ export function MessageList({ messages, streaming }: { messages: UiMessage[]; st
                   className="absolute left-0 top-0 w-full pb-4"
                   style={{ transform: `translateY(${item.start}px)` }}
                 >
-                  {m.role === "user" ? (
+                  {m.kind === "tool" ? (
+                    <ToolCallCard tool={m} />
+                  ) : m.role === "user" ? (
                     <div className="flex justify-end">
                       <div className={cn(WRAP, "max-w-[85%] rounded-2xl bg-secondary px-3.5 py-2 text-sm")}>
                         {m.text}

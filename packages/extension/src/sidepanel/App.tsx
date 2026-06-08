@@ -176,9 +176,6 @@ export function App() {
         headerActions={<PermissionModeToggle mode={perms.mode} onChange={perms.setMode} />}
         composerTop={
           <>
-            {sessions.activeTool && (
-              <p className="mb-1 px-1 text-xs text-muted-foreground">Running {sessions.activeTool}…</p>
-            )}
             {perms.pending && <ToolApprovalCard pending={perms.pending} onDecide={perms.resolve} />}
           </>
         }
