@@ -18,6 +18,7 @@ import { Markdown } from "./Markdown";
 import { ToolCallCard } from "./ToolCallCard";
 import { MessageActions } from "./primitives";
 import { Icon } from "./icons";
+import { SeenSet } from "@/lib/seen";
 
 const WRAP = "whitespace-pre-wrap break-words [overflow-wrap:anywhere]";
 
@@ -26,6 +27,11 @@ export function MessageList({ messages, streaming }: { messages: UiItem[]; strea
   // `pinned` = the user is at the bottom, so the list should follow new content.
   const [pinned, setPinned] = useState(true);
   const lastTopRef = useRef(0);
+  // One-shot entrance guard: seed with the ids present at mount so the initial
+  // transcript doesn't animate — only messages that arrive later fade up.
+  // Null-then-lazy-init pattern matches the codebase's useRef usage.
+  const seenRef = useRef<SeenSet | null>(null);
+  if (!seenRef.current) seenRef.current = new SeenSet(messages.map((m) => m.id));
 
   const virtualizer = useVirtualizer({
     count: messages.length,
@@ -66,6 +72,11 @@ export function MessageList({ messages, streaming }: { messages: UiItem[]; strea
     el.scrollTop = el.scrollHeight;
   }, [totalSize, pinned]);
 
+  // Record ids after commit so each message's entrance animation fires once.
+  useEffect(() => {
+    seenRef.current?.remember(messages.map((m) => m.id));
+  }, [messages]);
+
   const jumpToBottom = () => {
     setPinned(true);
     const el = viewportRef.current;
@@ -79,6 +90,7 @@ export function MessageList({ messages, streaming }: { messages: UiItem[]; strea
           <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
             {virtualizer.getVirtualItems().map((item) => {
               const m = messages[item.index]!;
+              const entering = seenRef.current!.isNew(m.id);
               return (
                 <div
                   key={item.key}
@@ -87,24 +99,26 @@ export function MessageList({ messages, streaming }: { messages: UiItem[]; strea
                   className="absolute left-0 top-0 w-full pb-4"
                   style={{ transform: `translateY(${item.start}px)` }}
                 >
-                  {m.kind === "tool" ? (
-                    <ToolCallCard tool={m} />
-                  ) : m.role === "user" ? (
-                    <div className="flex justify-end">
-                      <div className={cn(WRAP, "max-w-[85%] rounded-2xl bg-secondary px-3.5 py-2 text-sm")}>
-                        {m.text}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="group">
-                      <Markdown text={m.text} streaming={!!m.streaming} />
-                      {!m.streaming && m.text && (
-                        <div className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                          <MessageActions text={m.text} />
+                  <div className={entering ? "animate-msg-in" : undefined}>
+                    {m.kind === "tool" ? (
+                      <ToolCallCard tool={m} />
+                    ) : m.role === "user" ? (
+                      <div className="flex justify-end">
+                        <div className={cn(WRAP, "max-w-[85%] rounded-2xl bg-secondary px-3.5 py-2 text-sm")}>
+                          {m.text}
                         </div>
-                      )}
-                    </div>
-                  )}
+                      </div>
+                    ) : (
+                      <div className="group">
+                        <Markdown text={m.text} streaming={!!m.streaming} />
+                        {!m.streaming && m.text && (
+                          <div className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                            <MessageActions text={m.text} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
